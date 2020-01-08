@@ -48,13 +48,19 @@ const int INDENT_X = 5;
 const int ROOM_DESC_Y = 8;
 const int MOVEMENT_DESC_Y = 9;
 const int MAP_Y = 13;
+
+const char* EXTRA_OUTPUT_POS = "\x1b[25;6H";
+
 const int PLAYER_INPUT_X = 30;
-const int PLAYER_INPUT_Y = 11;
+const int PLAYER_INPUT_Y = 20;
 
 const int WEST = 4;
 const int EAST = 6;
 const int NORTH = 8;
 const int SOUTH = 2;
+
+const int LOOK = 9;
+const int FIGHT = 10;
 
 bool enableVirtualTerminal() {
 	//Set output mode to handle virtual terminal sequences
@@ -201,12 +207,18 @@ void drawValidDirections(int x, int y) {
 		((y < MAZE_HEIGHT - 1) ? "south, " : "") << endl;
 }
 
-int getMovementDirection() {
+int getCommand() {
+	//Create the input buffer
+	char input[50] = "\0";
+
 	//Reset draw color
 	cout << RESET_COLOR;
 	//Reposition cursor
-	cout << CSI << PLAYER_INPUT_Y << ";" << 0 << "H" << YELLOW;
-	cout << INDENT << "Where to now?";
+	cout << CSI << PLAYER_INPUT_Y << ";" << 0 << "H";
+	//Clear existing text
+	cout << CSI << "4M";
+
+	cout << INDENT << "Enter a command.";
 
 	//Move cursor to position for player to enter input
 	cout << CSI << PLAYER_INPUT_Y << ";" << PLAYER_INPUT_X << "H" << YELLOW;
@@ -215,13 +227,40 @@ int getMovementDirection() {
 	std::cin.clear();
 	std::cin.ignore(std::cin.rdbuf()->in_avail());
 
-	int direction = 0;
-	std::cin >> direction;
+	std::cin >> input;
 	cout << RESET_COLOR;
 
-	if (std::cin.fail())
-		return 0;
-	return direction;
+	bool firstWordIsMove = false;
+	while (input) {
+		if (strcmp(input, "move") == 0) {
+			firstWordIsMove = true;
+		}
+		else if (firstWordIsMove) {
+			if (strcmp(input, "north") == 0)
+				return NORTH;
+			if (strcmp(input, "south") == 0)
+				return SOUTH;
+			if (strcmp(input, "east") == 0)
+				return EAST;
+			if (strcmp(input, "west") == 0)
+				return WEST;
+		}
+
+		if (strcmp(input, "look") == 0) {
+			return LOOK;
+		}
+
+		if (strcmp(input, "fight") == 0) {
+			return FIGHT;
+		}
+
+		char next = std::cin.peek();
+		if (next == '\n' || next == EOF)
+			break;
+		std::cin >> input;
+	}
+
+	return 0;
 }
 
 void main()
@@ -254,12 +293,12 @@ void main()
 
 		drawValidDirections(playerX, playerY);
 
-		int direction = getMovementDirection();
+		int command = getCommand();
 
 		drawRoom(rooms, playerX, playerY);
 
 		//Move player in input direction
-		switch (direction) {
+		switch (command) {
 		case EAST:
 			if (playerX < MAZE_WIDTH - 1)
 				playerX++;
@@ -275,8 +314,40 @@ void main()
 		case SOUTH:
 			if (playerY < MAZE_HEIGHT - 1)
 				playerY++;
+			break;
+		case LOOK:
+			drawPlayer(playerX, playerY);
+			//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+			cout << RESET_COLOR;
+			cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
+			cout << INDENT << "You look around but see nothing worth mentioning." << endl;
+			cout << INDENT << "Press 'Enter' to continue.";
+			cin.clear();
+			cin.ignore(cin.rdbuf()->in_avail());
+			cin.get();
+			break;
+		case FIGHT:
+			drawPlayer(playerX, playerY);
+			//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+			cout << RESET_COLOR;
+			cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
+			cout << INDENT << "You could try to fight, but you don't have a weapon." << endl;
+			cout << INDENT << "Press 'Enter' to continue.";
+			cin.clear();
+			cin.ignore(cin.rdbuf()->in_avail());
+			cin.get();
+			break;
 		default:
-			break; //Do nothing, restart the loop
+			drawPlayer(playerX, playerY);
+			//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+			cout << RESET_COLOR;
+			cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
+			cout << INDENT << "You try, but you just can't do it." << endl;
+			cout << INDENT << "Press 'Enter' to continue.";
+			cin.clear();
+			cin.ignore(cin.rdbuf()->in_avail());
+			cin.get();
+			break;
 		}
 	} //End of Game Loop
 
