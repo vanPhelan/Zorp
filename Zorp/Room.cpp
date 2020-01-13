@@ -3,10 +3,9 @@
 #include "GameDefines.h"
 #include <iostream>
 
-Room::Room() :
-	m_type{ EMPTY },
-	m_mapPosition{ 0, 0 }
-{ }
+Room::Room() : m_type{ EMPTY }, m_mapPosition{ 0, 0 }
+{
+}
 
 Room::~Room() { }
 

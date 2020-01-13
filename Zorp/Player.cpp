@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "GameDefines.h"
 #include <iostream>
+#include <algorithm>
 
 Player::Player() :
 	m_mapPosition{ 0, 0 },
@@ -40,7 +41,7 @@ void Player::draw()
 	std::cout << MAGENTA << ICON_PLAYER << RESET_COLOR;
 
 	std::cout << INVENTORY_OUTPUT_POS;
-	for (auto it = m_powerups.begin(); it < m_powerups.end(); it++) {
+	for (std::vector<Powerup>::iterator it = m_powerups.begin(); it < m_powerups.end(); it++) {
 		std::cout << (*it).getName() << "\t";
 	}
 }
@@ -70,6 +71,51 @@ bool Player::executeCommand(int command, int roomType)
 	}
 	return false;
 }
+/*
+bool Player::pickup(int roomType)
+{
+	static const char descriptors[15][30] = {
+		"indifference", "invisibility", "invulnerability", "incontinence",
+		"improbability", "impatience", "indecision", "inspiration",
+		"independence", "incurability", "integration", "invocation",
+		"inferno", "indigestion", "inoculation"
+	};
+
+	int item = rand() % 15;
+
+	char name[30];
+
+	//Add the first part of the item name
+	switch (roomType) {
+	case TREASURE_HP:
+		strcpy_s(name, "potion of ");
+		break;
+	case TREASURE_AT:
+		strcpy_s(name, "sword of ");
+		break;
+	case TREASURE_DF:
+		strcpy_s(name, "shield of ");
+		break;
+	default:
+		return false;
+	}
+
+	//Add the second part of the item name
+	strncat_s(name, descriptors[item], 30);
+
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR
+		<< "You pick up the " << name << "." << std::endl;
+	m_powerups.push_back(Powerup(name, 1, 1, 1));
+
+	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
+
+	std::cout << INDENT << "Press 'Enter' to continue.";
+	std::cin.clear();
+	std::cin.ignore(std::cin.rdbuf()->in_avail());
+	std::cin.get();
+	return true;
+}
+*/
 
 bool Player::pickup(int roomType)
 {
@@ -101,6 +147,8 @@ bool Player::pickup(int roomType)
 	m_powerups.push_back(Powerup(name, 1, 1, 1.1f));
 	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
 	std::cout << "You pick up the " << name << "." << std::endl;
+
+	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
 
 	std::cout << INDENT << "Press 'Enter' to continue.";
 	std::cin.clear();
