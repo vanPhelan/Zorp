@@ -46,7 +46,7 @@ void Player::draw()
 	}
 }
 
-bool Player::executeCommand(int command, int roomType)
+bool Player::executeCommand(int command, Room* room)
 {
 	//Move player in input direction
 	switch (command) {
@@ -67,7 +67,7 @@ bool Player::executeCommand(int command, int roomType)
 			m_mapPosition.y++;
 		return true;
 	case PICKUP:
-		return pickup(roomType);
+		return pickup(room);
 	}
 	return false;
 }
@@ -117,7 +117,7 @@ bool Player::pickup(int roomType)
 }
 */
 
-bool Player::pickup(int roomType)
+bool Player::pickup(Room* room)
 {
 	static const char itemNames[14][30] = {
 		"beige", "black", "blue", "brown", "burgundy",
@@ -130,7 +130,7 @@ bool Player::pickup(int roomType)
 	char name[30];
 	strcpy_s(name, 30, itemNames[item]);
 
-	switch (roomType) {
+	switch (room->getType()) {
 	case TREASURE_HP:
 		strncat_s(name, 30, " potion", 30);
 		break;
@@ -144,10 +144,15 @@ bool Player::pickup(int roomType)
 		return false;
 	}
 
+	//Add the treasure to the inventory
 	m_powerups.push_back(Powerup(name, 1, 1, 1.1f));
 	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
 	std::cout << "You pick up the " << name << "." << std::endl;
 
+	//Remove the treasure from the room
+	room->setType(EMPTY);
+
+	//Sort the inventory
 	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
 
 	std::cout << INDENT << "Press 'Enter' to continue.";

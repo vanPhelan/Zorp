@@ -38,7 +38,7 @@ void Game::update()
 	//Get command from the player
 	int command = getCommand();
 	//Execute the command
-	if (m_player.executeCommand(command, m_map[playerPos.y][playerPos.x].getType())) {
+	if (m_player.executeCommand(command, &m_map[playerPos.y][playerPos.x])) {
 
 	}
 	else {
