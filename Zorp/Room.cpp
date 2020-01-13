@@ -3,27 +3,30 @@
 #include "GameDefines.h"
 #include <iostream>
 
-Room::Room() {
-	m_type = EMPTY;
-	m_mapPosition = { 0, 0 };
-}
+Room::Room() :
+	m_type{ EMPTY },
+	m_mapPosition{ 0, 0 }
+{ }
 
-Room::~Room() {
-}
+Room::~Room() { }
 
-void Room::setPosition(Point2D position) {
+void Room::setPosition(Point2D position)
+{
 	m_mapPosition = position;
 }
 
-void Room::setType(int type) {
+void Room::setType(int type)
+{
 	m_type = type;
 }
 
-int Room::getType() {
+int Room::getType()
+{
 	return m_type;
 }
 
-void Room::draw() {
+void Room::draw()
+{
 	//Find the console output position
 	int outX = INDENT_X + (6 * m_mapPosition.x) + 1;
 	int outY = MAP_Y + m_mapPosition.y;
@@ -40,6 +43,9 @@ void Room::draw() {
 		std::cout << RED << ICON_ENEMY;
 		break;
 	case TREASURE:
+	case TREASURE_HP:
+	case TREASURE_AT:
+	case TREASURE_DF:
 		std::cout << YELLOW << ICON_TREASURE;
 		break;
 	case FOOD:
@@ -55,7 +61,8 @@ void Room::draw() {
 	std::cout << RESET_COLOR << " ] ";
 }
 
-void Room::drawDescription() {
+void Room::drawDescription()
+{
 	//Reset the draw color
 	std::cout << RESET_COLOR;
 	//Reposition cursor
@@ -74,7 +81,10 @@ void Room::drawDescription() {
 			<< std::endl;
 		break;
 	case TREASURE:
-		std::cout << INDENT << "Your journey has been rewarded! You have found some treasure."
+	case TREASURE_HP:
+	case TREASURE_AT:
+	case TREASURE_DF:
+		std::cout << INDENT << "There appears to be some treasure here! Perhaps you should investigate further."
 			<< std::endl;
 		break;
 	case FOOD:
@@ -91,33 +101,37 @@ void Room::drawDescription() {
 	}
 }
 
-bool Room::executeCommand(int command) {
+bool Room::executeCommand(int command)
+{
 	switch (command) {
 	case LOOK:
-		//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
-		std::cout << RESET_COLOR;
-		std::cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
-		std::cout << INDENT << "You look around but see nothing worth mentioning." << std::endl;
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+		switch (m_type) {
+		case TREASURE_HP:
+		case TREASURE_AT:
+		case TREASURE_DF:
+			std::cout << "There is some treasure here. It looks small enough to pick up." << std::endl;
+			break;
+		default:
+			std::cout << "You look around but see nothing worth mentioning." << std::endl;
+			break;
+		}
 		std::cout << INDENT << "Press 'Enter' to continue.";
 		std::cin.clear();
 		std::cin.ignore(std::cin.rdbuf()->in_avail());
 		std::cin.get();
 		return true;
 	case FIGHT:
-		//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
-		std::cout << RESET_COLOR;
-		std::cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
-		std::cout << INDENT << "You could try to fight, but you don't have a weapon." << std::endl;
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+		std::cout << "You could try to fight, but you don't have a weapon." << std::endl;
 		std::cout << INDENT << "Press 'Enter' to continue.";
 		std::cin.clear();
 		std::cin.ignore(std::cin.rdbuf()->in_avail());
 		std::cin.get();
 		return true;
 	default:
-		//cout << EXTRA_OUTPUT_POS << RESET_COLOR;
-		std::cout << RESET_COLOR;
-		std::cout << CSI << PLAYER_INPUT_Y + 2 << ";" << 0 << "H";
-		std::cout << INDENT << "You try, but you just can't do it." << std::endl;
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+		std::cout << "You try, but you just can't do it." << std::endl;
 		std::cout << INDENT << "Press 'Enter' to continue.";
 		std::cin.clear();
 		std::cin.ignore(std::cin.rdbuf()->in_avail());

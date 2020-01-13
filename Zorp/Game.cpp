@@ -15,7 +15,8 @@ Game::~Game()
 {
 }
 
-bool Game::startup() {
+bool Game::startup()
+{
 	if (!enableVirtualTerminal()) {
 
 	}
@@ -27,7 +28,8 @@ bool Game::startup() {
 	return true;
 }
 
-void Game::update() {
+void Game::update()
+{
 	//Check if the player is at the exit
 	Point2D playerPos = m_player.getPosition();
 	if (m_map[playerPos.y][playerPos.x].getType() == EXIT) {
@@ -37,7 +39,7 @@ void Game::update() {
 	//Get command from the player
 	int command = getCommand();
 	//Execute the command
-	if (m_player.executeCommand(command)) {
+	if (m_player.executeCommand(command, m_map[playerPos.y][playerPos.x].getType())) {
 
 	}
 	else {
@@ -46,23 +48,26 @@ void Game::update() {
 
 }
 
-void Game::draw() {
-	//List the directions the player can take
-	drawValidDirections();
+void Game::draw()
+{
 	//Draw the description of the current room
 	Point2D playerPos = m_player.getPosition();
 	m_map[playerPos.y][playerPos.x].drawDescription();
+	//List the directions the player can take
+	drawValidDirections();
 	//Redraw the map
 	drawMap();
 	//Draw the player on the map
 	m_player.draw();
 }
 
-bool Game::isGameOver() {
+bool Game::isGameOver()
+{
 	return m_gameOver;
 }
 
-bool Game::enableVirtualTerminal() {
+bool Game::enableVirtualTerminal()
+{
 	//Set output mode to handle virtual terminal sequences
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE) {
@@ -79,7 +84,8 @@ bool Game::enableVirtualTerminal() {
 	return true;
 }
 
-void Game::initializeMap() {
+void Game::initializeMap()
+{
 	srand(time(nullptr));
 
 	//Fill the arrays with random room types
@@ -87,7 +93,11 @@ void Game::initializeMap() {
 		for (int x = 0; x < MAZE_WIDTH; x++) {
 			int type = rand() % (MAX_RANDOM_TYPE * 2);
 			if (type < MAX_RANDOM_TYPE)
+			{
+				if (type == TREASURE)
+					type = rand() % 3 + TREASURE_HP;
 				m_map[y][x].setType(type);
+			}
 			else
 				m_map[y][x].setType(EMPTY);
 			m_map[y][x].setPosition(Point2D{ x, y });
@@ -98,14 +108,16 @@ void Game::initializeMap() {
 	m_map[MAZE_HEIGHT - 1][MAZE_WIDTH - 1].setType(EXIT);
 }
 
-void Game::drawWelcomeMessage() {
+void Game::drawWelcomeMessage()
+{
 	//Greet the player
 	std::cout << TITLE << MAGENTA << "Welcome to ZORP!" << RESET_COLOR << std::endl;
 	std::cout << INDENT << "ZORP is a game of a game of adventure, danger, and low cunning." << std::endl;
 	std::cout << INDENT << "It is definitely not related to any other text-based adventure game." << std::endl << std::endl;
 }
 
-void Game::drawMap() {
+void Game::drawMap()
+{
 	//Reset draw colors
 	std::cout << RESET_COLOR;
 	for (int y = 0; y < MAZE_HEIGHT; y++) {
@@ -117,7 +129,8 @@ void Game::drawMap() {
 	}
 }
 
-void Game::drawValidDirections() {
+void Game::drawValidDirections()
+{
 	Point2D position = m_player.getPosition();
 
 	//Reset draw color
@@ -132,7 +145,8 @@ void Game::drawValidDirections() {
 		((position.y < MAZE_HEIGHT - 1) ? "south, " : "") << std::endl;
 }
 
-int Game::getCommand() {
+int Game::getCommand()
+{
 	//Create the input buffer
 	char input[50] = "\0";
 
@@ -142,6 +156,8 @@ int Game::getCommand() {
 	std::cout << CSI << PLAYER_INPUT_Y << ";" << 0 << "H";
 	//Clear existing text
 	std::cout << CSI << "4M";
+	//Insert 4 blank lines to ensure the inventory output remains correct
+	std::cout << CSI << "4L";
 
 	std::cout << INDENT << "Enter a command.";
 
@@ -156,6 +172,7 @@ int Game::getCommand() {
 	std::cout << RESET_COLOR;
 
 	bool firstWordIsMove = false;
+	bool firstWordIsPick = false;
 	while (input) {
 		if (strcmp(input, "move") == 0) {
 			firstWordIsMove = true;
@@ -177,6 +194,14 @@ int Game::getCommand() {
 
 		if (strcmp(input, "fight") == 0) {
 			return FIGHT;
+		}
+
+		if (strcmp(input, "pick") == 0) {
+			firstWordIsPick = true;
+		}
+		else if (firstWordIsPick) {
+			if (strcmp(input, "up") == 0)
+				return PICKUP;
 		}
 
 		char next = std::cin.peek();

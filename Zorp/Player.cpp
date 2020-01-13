@@ -3,28 +3,34 @@
 #include "GameDefines.h"
 #include <iostream>
 
-Player::Player()
+Player::Player() :
+	m_mapPosition{ 0, 0 },
+	m_healthPoints{ 100 },
+	m_attackPoints{ 20 },
+	m_defensePoints{ 20 }
+{ }
+
+Player::Player(int x, int y) :
+	m_mapPosition{ x, y },
+	m_healthPoints{ 100 },
+	m_attackPoints{ 20 },
+	m_defensePoints{ 20 }
+{ }
+
+Player::~Player() { }
+
+void Player::setPosition(Point2D position)
 {
-	m_mapPosition = { 0, 0 };
-}
-
-Player::Player(int x, int y) {
-	m_mapPosition = { x, y };
-}
-
-Player::~Player()
-{
-}
-
-void Player::setPosition(Point2D position) {
 	m_mapPosition = position;
 }
 
-Point2D Player::getPosition() {
+Point2D Player::getPosition()
+{
 	return m_mapPosition;
 }
 
-void Player::draw() {
+void Player::draw()
+{
 	int x = INDENT_X + (6 * m_mapPosition.x) + 3;
 	int y = MAP_Y + m_mapPosition.y;
 
@@ -32,9 +38,15 @@ void Player::draw() {
 	//Move cursor to map pos and delete character at current position
 	std::cout << CSI << y << ";" << x << "H";
 	std::cout << MAGENTA << ICON_PLAYER << RESET_COLOR;
+
+	std::cout << INVENTORY_OUTPUT_POS;
+	for (auto it = m_powerups.begin(); it < m_powerups.end(); it++) {
+		std::cout << (*it).getName() << "\t";
+	}
 }
 
-bool Player::executeCommand(int command) {
+bool Player::executeCommand(int command, int roomType)
+{
 	//Move player in input direction
 	switch (command) {
 	case EAST:
@@ -53,6 +65,46 @@ bool Player::executeCommand(int command) {
 		if (m_mapPosition.y < MAZE_HEIGHT - 1)
 			m_mapPosition.y++;
 		return true;
+	case PICKUP:
+		return pickup(roomType);
 	}
 	return false;
+}
+
+bool Player::pickup(int roomType)
+{
+	static const char itemNames[14][30] = {
+		"beige", "black", "blue", "brown", "burgundy",
+		"clear", "green", "grey", "pink", "plaid",
+		"purple", "red", "white", "yellow"
+	};
+
+	int item = rand() % 14;
+
+	char name[30];
+	strcpy_s(name, 30, itemNames[item]);
+
+	switch (roomType) {
+	case TREASURE_HP:
+		strncat_s(name, 30, " potion", 30);
+		break;
+	case TREASURE_AT:
+		strncat_s(name, 30, " sword", 30);
+		break;
+	case TREASURE_DF:
+		strncat_s(name, 30, " shield", 30);
+		break;
+	default:
+		return false;
+	}
+
+	m_powerups.push_back(Powerup(name, 1, 1, 1.1f));
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+	std::cout << "You pick up the " << name << "." << std::endl;
+
+	std::cout << INDENT << "Press 'Enter' to continue.";
+	std::cin.clear();
+	std::cin.ignore(std::cin.rdbuf()->in_avail());
+	std::cin.get();
+	return true;
 }
