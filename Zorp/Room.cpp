@@ -1,13 +1,26 @@
 #include "pch.h"
 #include "Room.h"
+#include "Powerup.h"
+#include "Player.h"
 #include "GameDefines.h"
 #include <iostream>
 
-Room::Room() : m_type{ EMPTY }, m_mapPosition{ 0, 0 }
+static const char descriptors[15][30] = {
+		"indifference", "invisibility", "invulnerability", "incontinence",
+		"improbability", "impatience", "indecision", "inspiration",
+		"independence", "incurability", "integration", "invocation",
+		"inferno", "indigestion", "inoculation"
+};
+
+Room::Room() : m_type{ EMPTY }, m_mapPosition{ 0, 0 }, m_powerup{ nullptr }
 {
 }
 
-Room::~Room() { }
+Room::~Room()
+{
+	if (m_powerup != nullptr)
+		delete m_powerup;
+}
 
 void Room::setPosition(Point2D position)
 {
@@ -17,6 +30,43 @@ void Room::setPosition(Point2D position)
 void Room::setType(int type)
 {
 	m_type = type;
+
+	//Stop if type is not a treasure
+	if (!(m_type == TREASURE_HP || m_type == TREASURE_AT || m_type == TREASURE_DF))
+		return;
+	//Stop if the treasure is empty
+	if (m_powerup != nullptr)
+		return;
+
+	int item = rand() % 15;
+
+	char name[30] = "";
+
+	float hp = 1;
+	float at = 1;
+	float df = 1;
+
+	//Add the first part of the item name
+	switch (type) {
+	case TREASURE_HP:
+		strcpy_s(name, "potion of ");
+		hp = 1.1f;
+		break;
+	case TREASURE_AT:
+		strcpy_s(name, "sword of ");
+		at = 1.1f;
+		break;
+	case TREASURE_DF:
+		strcpy_s(name, "shield of ");
+		df = 1.1f;
+		break;
+	}
+
+	//Add the second part of the item name
+	strncat_s(name, descriptors[item], 30);
+	if (m_powerup != nullptr)
+		delete m_powerup;
+	m_powerup = new Powerup(name, hp, at, df);
 }
 
 int Room::getType()
@@ -100,7 +150,7 @@ void Room::drawDescription()
 	}
 }
 
-bool Room::executeCommand(int command)
+bool Room::executeCommand(int command, Player* player)
 {
 	switch (command) {
 	case LOOK:
@@ -128,6 +178,8 @@ bool Room::executeCommand(int command)
 		std::cin.ignore(std::cin.rdbuf()->in_avail());
 		std::cin.get();
 		return true;
+	case PICKUP:
+		return pickup(player);
 	default:
 		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
 		std::cout << "You try, but you just can't do it." << std::endl;
@@ -138,4 +190,29 @@ bool Room::executeCommand(int command)
 		break;
 	}
 	return false;
+}
+
+bool Room::pickup(Player* player)
+{
+	//Ensure there is a powerup
+	if (m_powerup == nullptr) {
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR
+			<< "There is nothing here to pick up." << std::endl;
+		return true;
+	}
+
+	//Add powerup to player's inventory
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR
+		<< "You pick up the " << m_powerup->getName() << "." << std::endl;
+	player->addPowerup(m_powerup);
+
+	//Remove powerup from the room
+	m_powerup = nullptr;
+	m_type = EMPTY;
+
+	std::cout << INDENT << "Press 'Enter' to continue.";
+	std::cin.clear();
+	std::cin.ignore(std::cin.rdbuf()->in_avail());
+	std::cin.get();
+	return true;
 }

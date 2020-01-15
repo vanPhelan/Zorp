@@ -37,12 +37,19 @@ void Game::update()
 	}
 	//Get command from the player
 	int command = getCommand();
+
+	//Exit game if needed
+	if (command == QUIT) {
+		m_gameOver = true;
+		return;
+	}
+
 	//Execute the command
-	if (m_player.executeCommand(command, &m_map[playerPos.y][playerPos.x])) {
+	if (m_player.executeCommand(command)) {
 
 	}
 	else {
-		m_map[playerPos.y][playerPos.x].executeCommand(command);
+		m_map[playerPos.y][playerPos.x].executeCommand(command, &m_player);
 	}
 
 }
@@ -201,6 +208,10 @@ int Game::getCommand()
 		else if (firstWordIsPick) {
 			if (strcmp(input, "up") == 0)
 				return PICKUP;
+		}
+
+		if (strcmp(input, "exit") == 0 || strcmp(input, "quit") == 0) {
+			return QUIT;
 		}
 
 		char next = std::cin.peek();

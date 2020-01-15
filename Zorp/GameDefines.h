@@ -55,3 +55,4 @@ const int SOUTH = 2;
 const int LOOK = 9;
 const int FIGHT = 10;
 const int PICKUP = 11;
+const int QUIT = 12;
