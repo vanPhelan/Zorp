@@ -1,30 +1,26 @@
 #include "pch.h"
 #include "Player.h"
+#include "Room.h"
+#include "Enemy.h"
+#include "Food.h"
+#include "Powerup.h"
 #include "GameDefines.h"
 #include <iostream>
 #include <algorithm>
 
 Player::Player() :
 	m_mapPosition{ 0, 0 },
-	m_healthPoints{ 100 },
+	m_hitPoints{ 100 },
 	m_attackPoints{ 20 },
 	m_defensePoints{ 20 }
 { }
 
 Player::Player(int x, int y) :
 	m_mapPosition{ x, y },
-	m_healthPoints{ 100 },
+	m_hitPoints{ 100 },
 	m_attackPoints{ 20 },
 	m_defensePoints{ 20 }
 { }
-
-Player::~Player()
-{
-	for (std::vector<Powerup*>::iterator it = m_powerups.begin(); it < m_powerups.end(); it++) {
-		delete *it;
-	}
-	m_powerups.clear();
-}
 
 void Player::addPowerup(Powerup* powerup)
 {
@@ -32,16 +28,6 @@ void Player::addPowerup(Powerup* powerup)
 	m_powerups.push_back(powerup);
 	//Sort the inventory
 	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
-}
-
-void Player::setPosition(Point2D position)
-{
-	m_mapPosition = position;
-}
-
-Point2D Player::getPosition()
-{
-	return m_mapPosition;
 }
 
 void Player::draw()
@@ -60,28 +46,122 @@ void Player::draw()
 	}
 }
 
-bool Player::executeCommand(int command)
+void Player::executeCommand(int command, Room* room)
 {
-	//Move player in input direction
 	switch (command) {
 	case EAST:
+		//Move player east
 		if (m_mapPosition.x < MAZE_WIDTH - 1)
 			m_mapPosition.x++;
-		return true;
+		return;
 	case WEST:
+		//Move player west
 		if (m_mapPosition.x > 0)
 			m_mapPosition.x--;
-		return true;
+		return;
 	case NORTH:
+		//Move player north
 		if (m_mapPosition.y > 0)
 			m_mapPosition.y--;
-		return true;
+		return;
 	case SOUTH:
+		//Move player south
 		if (m_mapPosition.y < MAZE_HEIGHT - 1)
 			m_mapPosition.y++;
-		return true;
+		return;
+	case LOOK:
+		//Tell player what is in the room
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+		if (room->getEnemy() != nullptr) {
+			std::cout << "LOOK OUT! An enemy is approaching." << std::endl;
+		}
+		else if (room->getPowerup() != nullptr) {
+			std::cout << "There is some treasure here. It looks small enough to pick up." << std::endl;
+		}
+		else if (room->getFood() != nullptr) {
+			std::cout << "There is some food here. It should be edible." << std::endl;
+		}
+		else {
+			std::cout << "You look around but see nothing worth mentioning." << std::endl;
+		}
+		break;
+	case FIGHT:
+		//Attack the enemy in the room
+		attack(room->getEnemy());
+		break;
+	case PICKUP:
+		//Pickup what's in the room
+		pickup(room);
+		break;
+	default:
+		//Whoops
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+		std::cout << "You try, but you just can't do it." << std::endl;
+		break;
 	}
-	return false;
+
+	std::cout << INDENT << "Press 'Enter' to continue.";
+	std::cin.clear();
+	std::cin.ignore(std::cin.rdbuf()->in_avail());
+	std::cin.get();
+}
+
+void Player::pickup(Room* room)
+{
+	//Get powerup and food
+	Powerup* powerup = room->getPowerup();
+	Food* food = room->getFood();
+
+	//Set output position and color
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+
+	if (powerup != nullptr) {
+		std::cout << "You pick up the " << powerup->getName() << "." << std::endl;
+		//Add the powerup to the inventory
+		addPowerup(powerup);
+		//Remove the powerup from the room
+		room->setPowerup(nullptr);
+	}
+	else if (food != nullptr) {
+		//CONSUME
+		m_hitPoints += food->getHP();
+		std::cout << "You feel refreshed. You have recovered " << food->getHP() << " hit points "
+			<< "and now have " << m_hitPoints << "." << std::endl;
+		//Remove the food from the room
+		room->setFood(nullptr);
+	}
+	else {
+		std::cout << "There is nothing here to pick up." << std::endl;
+	}
+}
+
+void Player::attack(Enemy* enemy)
+{
+	//Set output position and color
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
+
+	if (enemy != nullptr) {
+		//Damage the enemy
+		enemy->onAttacked(m_attackPoints);
+
+		//Check enemy status
+		if (!enemy->isAlive()) {
+			std::cout << "You fight a grue and kill it." << std::endl;
+		}
+		else {
+			int damage = enemy->getAP() - m_defensePoints;
+			if (damage < 0) damage = 0;
+			m_hitPoints -= damage;
+
+			std::cout << "You fight a grue and take " << damage << " points of damage. "
+				<< "You have " << m_hitPoints << " remaining." << std::endl;
+			std::cout << INDENT << "The grue has " << enemy->getHP() << " hit points remaining."
+				<< std::endl;
+		}
+	}
+	else {
+		std::cout << "There is no one here to fight." << std::endl;
+	}
 }
 
 /*

@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Game.h"
+#include "Enemy.h"
+#include "Food.h"
+#include "Powerup.h"
 #include <iostream>
 #include <Windows.h>
 #include <random>
@@ -12,6 +15,9 @@ Game::Game() : m_gameOver{ false }
 
 Game::~Game()
 {
+	delete[] m_powerups;
+	delete[] m_enemies;
+	delete[] m_food;
 }
 
 bool Game::startup()
@@ -19,9 +25,14 @@ bool Game::startup()
 	if (!enableVirtualTerminal()) {
 
 	}
-
+	//Set the random seed
+	srand(time(nullptr));
+	//Initialize the map and its contents
 	initializeMap();
-
+	initializeEnemies();
+	initializeFood();
+	initializePowerups();
+	//Welcome the player
 	drawWelcomeMessage();
 
 	return true;
@@ -45,13 +56,15 @@ void Game::update()
 	}
 
 	//Execute the command
-	if (m_player.executeCommand(command)) {
+	m_player.executeCommand(command, &m_map[playerPos.y][playerPos.x]);
 
+	//Kill dead enemies
+	for (int i = 0; i < m_enemyCount; i++) {
+		if (!m_enemies[i].isAlive()) {
+			Point2D pos = m_enemies[i].getPosition();
+			m_map[pos.y][pos.x].setEnemy(nullptr);
+		}
 	}
-	else {
-		m_map[playerPos.y][playerPos.x].executeCommand(command, &m_player);
-	}
-
 }
 
 void Game::draw()
@@ -92,26 +105,88 @@ bool Game::enableVirtualTerminal()
 
 void Game::initializeMap()
 {
-	srand(time(nullptr));
-
-	//Fill the arrays with random room types
+	//Set room positions
 	for (int y = 0; y < MAZE_HEIGHT; y++) {
 		for (int x = 0; x < MAZE_WIDTH; x++) {
-			int type = rand() % (MAX_RANDOM_TYPE * 2);
-			if (type < MAX_RANDOM_TYPE)
-			{
-				if (type == TREASURE)
-					type = rand() % 3 + TREASURE_HP;
-				m_map[y][x].setType(type);
-			}
-			else
-				m_map[y][x].setType(EMPTY);
 			m_map[y][x].setPosition(Point2D{ x, y });
 		}
 	}
 	//Set the entrance and exit of the maze
 	m_map[0][0].setType(ENTRANCE);
 	m_map[MAZE_HEIGHT - 1][MAZE_WIDTH - 1].setType(EXIT);
+}
+
+void Game::initializeEnemies()
+{
+	//Create a dynamic array of enemies
+	m_enemyCount = 1 + rand() % 4;
+	m_enemies = new Enemy[m_enemyCount];
+
+	//Place each enemy in a random room on the map
+	for (int i = 0; i < m_enemyCount; i++) {
+		//Ensure enemies are not placed on or adjecent to entrance or exit
+		int x = 2 + (rand() % (MAZE_WIDTH - 3));
+		int y = 2 + (rand() % (MAZE_HEIGHT - 3));
+
+		//Set the enemy's position
+		m_enemies[i].setPosition({ x, y });
+		//Set the room's enemy
+		m_map[y][x].setEnemy(&m_enemies[i]);
+	}
+}
+
+void Game::initializeFood()
+{
+	//Create a dynamic array of food
+	m_foodCount = 3;
+	m_food = new Food[m_foodCount];
+
+	//Place each food in a random room on the map
+	for (int i = 0; i < m_foodCount; i++) {
+		int x = rand() % (MAZE_WIDTH - 1);
+		int y = rand() % (MAZE_HEIGHT - 1);
+
+		//Set the room's food
+		m_map[y][x].setFood(&m_food[i]);
+	}
+}
+
+void Game::initializePowerups()
+{
+	//Create a dynamic array of powerups
+	m_powerupCount = 3;
+	m_powerups = new Powerup[m_powerupCount];
+
+	//Place each powerup in a random room on the map
+	for (int i = 0; i < m_powerupCount; i++) {
+		char name[30] = "";
+
+		int x = rand() % (MAZE_WIDTH - 1);
+		int y = rand() % (MAZE_HEIGHT - 1);
+
+		//Add the first part of the item name
+		switch (i) {
+		case 0:
+			strcpy_s(name, "potion of ");
+			m_powerups[i].setHealthMultiplier(1.1f);
+			break;
+		case 1:
+			strcpy_s(name, "sword of ");
+			m_powerups[i].setAttackMultiplier(1.1f);
+			break;
+		case 2:
+			strcpy_s(name, "shield of ");
+			m_powerups[i].setDefenseMultiplier(1.1f);
+			break;
+		}
+
+		//Add the second part of the item name
+		strncat_s(name, descriptors[rand() % 15], 30);
+		//Set the power's name
+		m_powerups[i].setName(name);
+		//Set the room's powerup
+		m_map[y][x].setPowerup(&m_powerups[i]);
+	}
 }
 
 void Game::drawWelcomeMessage()
@@ -161,9 +236,9 @@ int Game::getCommand()
 	//Reposition cursor
 	std::cout << CSI << PLAYER_INPUT_Y << ";" << 0 << "H";
 	//Clear existing text
-	std::cout << CSI << "4M";
-	//Insert 4 blank lines to ensure the inventory output remains correct
-	std::cout << CSI << "4L";
+	std::cout << CSI << "5M";
+	//Insert 5 blank lines to ensure the inventory output remains correct
+	std::cout << CSI << "5L";
 
 	std::cout << INDENT << "Enter a command.";
 
