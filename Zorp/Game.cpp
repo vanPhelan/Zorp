@@ -62,7 +62,7 @@ void Game::update()
 	for (int i = 0; i < m_enemyCount; i++) {
 		if (!m_enemies[i].isAlive()) {
 			Point2D pos = m_enemies[i].getPosition();
-			m_map[pos.y][pos.x].setEnemy(nullptr);
+			m_map[pos.y][pos.x].removeGameObject(&m_enemies[i]);
 		}
 	}
 }
@@ -131,7 +131,7 @@ void Game::initializeEnemies()
 		//Set the enemy's position
 		m_enemies[i].setPosition({ x, y });
 		//Set the room's enemy
-		m_map[y][x].setEnemy(&m_enemies[i]);
+		m_map[y][x].addGameObject(&m_enemies[i]);
 	}
 }
 
@@ -147,7 +147,7 @@ void Game::initializeFood()
 		int y = rand() % (MAZE_HEIGHT - 1);
 
 		//Set the room's food
-		m_map[y][x].setFood(&m_food[i]);
+		m_map[y][x].addGameObject(&m_food[i]);
 	}
 }
 
@@ -185,7 +185,7 @@ void Game::initializePowerups()
 		//Set the power's name
 		m_powerups[i].setName(name);
 		//Set the room's powerup
-		m_map[y][x].setPowerup(&m_powerups[i]);
+		m_map[y][x].addGameObject(&m_powerups[i]);
 	}
 }
 

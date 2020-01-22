@@ -8,42 +8,14 @@
 #include <iostream>
 #include <algorithm>
 
-Player::Player() :
-	m_mapPosition{ 0, 0 },
-	m_hitPoints{ 100 },
-	m_attackPoints{ 20 },
-	m_defensePoints{ 20 }
-{ }
-
-Player::Player(int x, int y) :
-	m_mapPosition{ x, y },
-	m_hitPoints{ 100 },
-	m_attackPoints{ 20 },
-	m_defensePoints{ 20 }
-{ }
-
-void Player::addPowerup(Powerup* powerup)
+Player::Player() : Character({ 0,0 }, 100, 20, 20)
 {
-	//Add the powerup to the inventory
-	m_powerups.push_back(powerup);
-	//Sort the inventory
-	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
+	m_priority = PRIORITY_PLAYER;
 }
 
-void Player::draw()
+Player::Player(int x, int y) : Character({ x,y }, 100, 20, 20)
 {
-	int x = INDENT_X + (6 * m_mapPosition.x) + 3;
-	int y = MAP_Y + m_mapPosition.y;
-
-	//Draw the player's position on the map
-	//Move cursor to map pos and delete character at current position
-	std::cout << CSI << y << ";" << x << "H";
-	std::cout << MAGENTA << ICON_PLAYER << RESET_COLOR;
-
-	std::cout << INVENTORY_OUTPUT_POS;
-	for (std::vector<Powerup*>::iterator it = m_powerups.begin(); it < m_powerups.end(); it++) {
-		std::cout << (*it)->getName() << "\t";
-	}
+	m_priority = PRIORITY_PLAYER;
 }
 
 void Player::executeCommand(int command, Room* room)
@@ -71,19 +43,7 @@ void Player::executeCommand(int command, Room* room)
 		return;
 	case LOOK:
 		//Tell player what is in the room
-		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
-		if (room->getEnemy() != nullptr) {
-			std::cout << "LOOK OUT! An enemy is approaching." << std::endl;
-		}
-		else if (room->getPowerup() != nullptr) {
-			std::cout << "There is some treasure here. It looks small enough to pick up." << std::endl;
-		}
-		else if (room->getFood() != nullptr) {
-			std::cout << "There is some food here. It should be edible." << std::endl;
-		}
-		else {
-			std::cout << "You look around but see nothing worth mentioning." << std::endl;
-		}
+		room->lookAt();
 		break;
 	case FIGHT:
 		//Attack the enemy in the room
@@ -106,6 +66,31 @@ void Player::executeCommand(int command, Room* room)
 	std::cin.get();
 }
 
+void Player::draw()
+{
+	int x = INDENT_X + (6 * m_mapPosition.x) + 3;
+	int y = MAP_Y + m_mapPosition.y;
+
+	//Draw the player's position on the map
+	//Move cursor to map pos and delete character at current position
+	std::cout << CSI << y << ";" << x << "H";
+	std::cout << MAGENTA << ICON_PLAYER << RESET_COLOR;
+
+	std::cout << INVENTORY_OUTPUT_POS;
+	for (std::vector<Powerup*>::iterator it = m_powerups.begin(); it < m_powerups.end(); it++) {
+		std::cout << (*it)->getName() << "\t";
+	}
+}
+
+void Player::drawDescription()
+{
+}
+
+void Player::lookAt()
+{
+	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR << "Hmm, I look good!" << std::endl;
+}
+
 void Player::pickup(Room* room)
 {
 	//Get powerup and food
@@ -120,15 +105,15 @@ void Player::pickup(Room* room)
 		//Add the powerup to the inventory
 		addPowerup(powerup);
 		//Remove the powerup from the room
-		room->setPowerup(nullptr);
+		room->removeGameObject(powerup);
 	}
 	else if (food != nullptr) {
 		//CONSUME
 		m_hitPoints += food->getHP();
-		std::cout << "You feel refreshed. You have recovered " << food->getHP() << " hit points "
-			<< "and now have " << m_hitPoints << "." << std::endl;
+		std::cout << "You feel refreshed. You have recovered " << food->getHP() <<
+			" hit points and now have " << m_hitPoints << "." << std::endl;
 		//Remove the food from the room
-		room->setFood(nullptr);
+		room->removeGameObject(food);
 	}
 	else {
 		std::cout << "There is nothing here to pick up." << std::endl;
@@ -150,7 +135,7 @@ void Player::attack(Enemy* enemy)
 		}
 		else {
 			int damage = enemy->getAP() - m_defensePoints;
-			if (damage < 0) damage = 0;
+			if (damage < 1) damage = 1;
 			m_hitPoints -= damage;
 
 			std::cout << "You fight a grue and take " << damage << " points of damage. "

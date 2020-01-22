@@ -20,6 +20,12 @@ const int EMPTY		= 0;
 const int ENTRANCE	= EMPTY + 1;
 const int EXIT		= ENTRANCE + 1;
 
+const int PRIORITY_DEFAULT = 5;
+const int PRIORITY_PLAYER = 0;
+const int PRIORITY_ENEMY = 1;
+const int PRIORITY_POWERUP = 2;
+const int PRIORITY_FOOD = 3;
+
 const char* const ICON_PLAYER = "@";
 const char* const ICON_EMPTY = "\xb0";
 const char* const ICON_ENEMY = "\x94";

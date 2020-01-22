@@ -1,19 +1,70 @@
 #include "pch.h"
 #include "Room.h"
-#include "Player.h"
+#include "GameObject.h"
 #include "Enemy.h"
 #include "Food.h"
 #include "Powerup.h"
 #include "GameDefines.h"
 #include <iostream>
+#include <algorithm>
 
 Room::Room() :
 	m_type{ EMPTY },
-	m_mapPosition{ 0, 0 },
-	m_enemy{ nullptr },
-	m_food{ nullptr },
-	m_powerup{ nullptr }
+	m_mapPosition{ 0, 0 }
 {
+}
+
+Enemy* Room::getEnemy()
+{
+	for (GameObject* obj : m_objects) {
+		Enemy* enemy = dynamic_cast<Enemy*>(obj);
+		if (enemy != nullptr) {
+			return enemy;
+		}
+	}
+	return nullptr;
+}
+
+Powerup* Room::getPowerup()
+{
+	for (GameObject* obj : m_objects) {
+		Powerup* powerup = dynamic_cast<Powerup*>(obj);
+		if (powerup != nullptr) {
+			return powerup;
+		}
+	}
+	return nullptr;
+}
+
+Food* Room::getFood()
+{
+	for (GameObject* obj : m_objects) {
+		Food* food = dynamic_cast<Food*>(obj);
+		if (food != nullptr) {
+			return food;
+		}
+	}
+	return nullptr;
+}
+
+void Room::addGameObject(GameObject* object)
+{
+	//Add the GameObject
+	m_objects.push_back(object);
+	//Sort the GameObjects
+	std::sort(m_objects.begin(), m_objects.end(), GameObject::compare);
+}
+
+void Room::removeGameObject(GameObject* object)
+{
+	for (auto it = m_objects.begin(); it != m_objects.end(); it++) {
+		//If the object is found in the list...
+		if (*it == object) {
+			//...remove it
+			m_objects.erase(it);
+			return;
+		}
+	}
 }
 
 void Room::draw()
@@ -28,27 +79,21 @@ void Room::draw()
 	std::cout << "[ ";
 	switch (m_type) {
 	case EMPTY:
-		if (m_enemy != nullptr) {
-			std::cout << RED << ICON_ENEMY;
-		}
-		else if (m_powerup != nullptr) {
-			std::cout << YELLOW << ICON_TREASURE;
-		}
-		else if (m_food != nullptr) {
-			std::cout << CYAN << ICON_FOOD;
+		if (m_objects.size() > 0) {
+			m_objects[0]->draw();
 		}
 		else {
-			std::cout << GREEN << ICON_EMPTY;
+			std::cout << GREEN << ICON_EMPTY<< RESET_COLOR;
 		}
 		break;
 	case ENTRANCE:
-		std::cout << WHITE << ICON_ENTRANCE;
+		std::cout << WHITE << ICON_ENTRANCE << RESET_COLOR;
 		break;
 	case EXIT:
-		std::cout << WHITE << ICON_EXIT;
+		std::cout << WHITE << ICON_EXIT << RESET_COLOR;
 		break;
 	}
-	std::cout << RESET_COLOR << " ] ";
+	std::cout  << " ] ";
 }
 
 void Room::drawDescription()
@@ -63,17 +108,8 @@ void Room::drawDescription()
 	//Write description of current room
 	switch (m_type) {
 	case EMPTY:
-		if (m_enemy != nullptr) {
-			std::cout << INDENT << RED << "BEWARE." << RESET_COLOR << " An enemy is approaching."
-				<< std::endl;
-		}
-		else if (m_powerup != nullptr) {
-			std::cout << INDENT << "There appears to be some treasure here! Perhaps you should investigate further."
-				<< std::endl;
-		}
-		else if (m_food != nullptr) {
-			std::cout << INDENT << "At last! You find some food to sustain you on your journey."
-				<< std::endl;
+		if (m_objects.size() > 0) {
+			m_objects[0]->drawDescription();
 		}
 		else {
 			std::cout << INDENT << "You are in an empty meadow. There is nothing of note here."
@@ -86,6 +122,18 @@ void Room::drawDescription()
 		break;
 	case EXIT:
 		std::cout << INDENT << "Despite all odds, you made it to the exit. Congratulations."
+			<< std::endl;
+	}
+}
+
+void Room::lookAt()
+{
+	if (m_objects.size() > 0) {
+		m_objects[0]->lookAt();
+	}
+	else {
+		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR
+			<< "You look around but see nothing worth mentioning."
 			<< std::endl;
 	}
 }
