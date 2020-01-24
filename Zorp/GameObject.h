@@ -2,6 +2,8 @@
 #include "Point2D.h"
 #include <fstream>
 
+class Game;
+
 class GameObject
 {
 public:
@@ -16,6 +18,7 @@ public:
 	virtual void drawDescription() = 0;
 	virtual void lookAt() = 0;
 	virtual void save(std::ofstream& out) = 0;
+	virtual bool load(std::ifstream& in, const Game* game) = 0;
 
 	static bool compare(const GameObject* p1, const GameObject* p2);
 

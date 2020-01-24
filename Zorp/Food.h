@@ -13,6 +13,7 @@ public:
 	void drawDescription();
 	void lookAt();
 	void save(std::ofstream& out);
+	bool load(std::ifstream& in, const Game* game);
 
 private:
 	int m_hitPoints;

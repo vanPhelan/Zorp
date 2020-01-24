@@ -8,8 +8,9 @@
 #include <random>
 #include <time.h>
 #include <fstream>
+#include <string>
 
-Game::Game() : m_gameOver{ false }
+Game::Game() : m_gameOver{ false }, m_tempPowerups{ nullptr }
 {
 }
 
@@ -84,6 +85,26 @@ void Game::draw()
 bool Game::isGameOver()
 {
 	return m_gameOver;
+}
+
+Powerup* Game::findPowerup(const char * name, bool isLoading) const
+{
+	if (!isLoading) {
+		//Search the list of powerups
+		for (int i = 0; i < m_powerupCount; i++) {
+			if (strcmp(name, m_powerups[i].getName()) == 0)
+				return &m_powerups[i];
+		}
+	}
+	else {
+		//Search the list of loading powerups
+		for (int i = 0; i < m_tempPowerupCount; i++) {
+			if (strcmp(name, m_tempPowerups[i].getName()) == 0)
+				return &m_tempPowerups[i];
+		}
+	}
+	//Nothing was found
+	return nullptr;
 }
 
 bool Game::enableVirtualTerminal()
@@ -295,6 +316,11 @@ int Game::getCommand()
 			return SAVE;
 		}
 
+		if (strcmp(input, "load") == 0) {
+			load();
+			return LOAD;
+		}
+
 		if (strcmp(input, "exit") == 0 || strcmp(input, "quit") == 0) {
 			return QUIT;
 		}
@@ -349,4 +375,134 @@ void Game::save()
 
 	out.flush();
 	out.close();
+}
+
+bool Game::load()
+{
+	std::ifstream in;
+
+	//Open the file for input
+	in.open("zorpsave.txt", std::ifstream::in);
+
+	if (!in.is_open()) {
+		return false;
+	}
+
+	char buffer[50] = { 0 };
+
+	//Clear the temporary list
+	if (m_tempPowerups != nullptr)
+		delete[] m_tempPowerups;
+
+	//Load the powerups
+	in.getline(buffer, 50);
+	//Read the amount of powerups
+	m_tempPowerupCount = std::stoi(buffer);
+	if (in.rdstate() || m_tempPowerupCount < 0)
+		return false;
+	//Read the powerups
+	m_tempPowerups = new Powerup[m_tempPowerupCount];
+	for (int i = 0; i < m_tempPowerupCount; i++) {
+		if (m_tempPowerups[i].load(in, this) == false) {
+			delete[] m_tempPowerups;
+			m_tempPowerups = nullptr;
+			return false;
+		}
+	}
+
+	//Load the enemies
+	in.getline(buffer, 50);
+	//Read the amount of enemies
+	int enemyCount = std::stoi(buffer);
+	if (in.rdstate() || enemyCount < 0)
+		return false;
+	//Read the enemies
+	Enemy* enemies = new Enemy[enemyCount];
+	for (int i = 0; i < enemyCount; i++) {
+		if (enemies[i].load(in, this) == false) {
+			delete[] enemies;
+			delete[] m_tempPowerups;
+			m_tempPowerups = nullptr;
+			return false;
+		}
+	}
+
+	//Load the food
+	in.getline(buffer, 50);
+	//Read the amount of food
+	int foodCount = std::stoi(buffer);
+	if (in.rdstate() || foodCount < 0)
+		return false;
+	//Read the food
+	Food* food = new Food[foodCount];
+	for (int i = 0; i < foodCount; i++) {
+		if (food[i].load(in, this) == false) {
+			delete[] food;
+			delete[] enemies;
+			delete[] m_tempPowerups;
+			m_tempPowerups = nullptr;
+			return false;
+		}
+	}
+
+	//Load the player
+	Player player;
+	if (player.load(in, this) == false) {
+		delete[] food;
+		delete[] enemies;
+		delete[] m_tempPowerups;
+		m_tempPowerups = nullptr;
+		return false;
+	}
+
+	//Rebuild the level
+
+	//Clear the rooms
+	for (int y = 0; y < MAZE_HEIGHT; y++) {
+		for (int x = 0; x < MAZE_WIDTH; x++) {
+			m_map[y][x].clearGameObjects();
+		}
+	}
+
+	//Add the powerups
+	delete[] m_powerups;
+	m_powerups = m_tempPowerups;
+	m_powerupCount = m_tempPowerupCount;
+	m_tempPowerups = nullptr;
+	//Place the powerups
+	for (int i = 0; i < m_powerupCount; i++) {
+		Point2D pos = m_powerups[i].getPosition();
+		if (pos.x >= 0 && pos.x < MAZE_WIDTH && pos.y >= 0 && pos.y < MAZE_HEIGHT) {
+			m_map[pos.y][pos.x].addGameObject(&m_powerups[i]);
+		}
+	}
+
+	//Add the enemies
+	delete[] m_enemies;
+	m_enemies = enemies;
+	m_enemyCount = enemyCount;
+	//Place the enemies
+	for (int i = 0; i < m_enemyCount; i++) {
+		Point2D pos = m_enemies[i].getPosition();
+		if (m_enemies[i].isAlive() && pos.x >= 0 && pos.x < MAZE_WIDTH && pos.y >= 0 && pos.y < MAZE_HEIGHT) {
+			m_map[pos.y][pos.x].addGameObject(&m_enemies[i]);
+		}
+	}
+
+	//Add the food
+	delete[] m_food;
+	m_food = food;
+	m_foodCount = foodCount;
+	//Place the food
+	for (int i = 0; i < m_foodCount; i++) {
+		Point2D pos = m_food[i].getPosition();
+		if (pos.x >= 0 && pos.x < MAZE_WIDTH && pos.y >= 0 && pos.y < MAZE_HEIGHT) {
+			m_map[pos.y][pos.x].addGameObject(&m_food[i]);
+		}
+	}
+
+	//Add the player
+	m_player = player;
+
+	return true;
 }

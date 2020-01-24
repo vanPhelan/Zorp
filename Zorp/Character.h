@@ -18,6 +18,7 @@ public:
 	virtual void lookAt() = 0;
 
 	void save(std::ofstream& out);
+	bool load(std::ifstream& in, const Game* game);
 
 	int getHP() { return m_hitPoints; }
 	int getAP() { return m_attackPoints; }

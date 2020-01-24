@@ -23,6 +23,7 @@ public:
 
 	void addGameObject(GameObject* object);
 	void removeGameObject(GameObject* object);
+	void clearGameObjects();
 
 	void draw();
 	void drawDescription();

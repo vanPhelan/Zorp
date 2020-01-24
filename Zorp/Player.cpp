@@ -81,6 +81,7 @@ void Player::draw()
 	std::cout << MAGENTA << ICON_PLAYER << RESET_COLOR;
 
 	std::cout << INVENTORY_OUTPUT_POS;
+	std::cout << CSI << "1M";
 	for (std::vector<Powerup*>::iterator it = m_powerups.begin(); it < m_powerups.end(); it++) {
 		std::cout << (*it)->getName() << "\t";
 	}

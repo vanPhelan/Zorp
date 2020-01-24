@@ -68,6 +68,11 @@ void Room::removeGameObject(GameObject* object)
 	}
 }
 
+void Room::clearGameObjects()
+{
+	m_objects.clear();
+}
+
 void Room::draw()
 {
 	//Find the console output position
