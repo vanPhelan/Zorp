@@ -1,5 +1,6 @@
 #pragma once
 #include "Point2D.h"
+#include <fstream>
 
 class GameObject
 {
@@ -14,6 +15,7 @@ public:
 	virtual void draw() = 0;
 	virtual void drawDescription() = 0;
 	virtual void lookAt() = 0;
+	virtual void save(std::ofstream& out) = 0;
 
 	static bool compare(const GameObject* p1, const GameObject* p2);
 

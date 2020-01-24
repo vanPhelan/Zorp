@@ -17,6 +17,8 @@ public:
 	virtual void drawDescription() = 0;
 	virtual void lookAt() = 0;
 
+	void save(std::ofstream& out);
+
 	int getHP() { return m_hitPoints; }
 	int getAP() { return m_attackPoints; }
 	int getDP() { return m_defensePoints; }

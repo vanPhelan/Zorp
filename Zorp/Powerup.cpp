@@ -29,12 +29,7 @@ void Powerup::setName(const char name[30])
 
 bool Powerup::compare(const Powerup* p1, const Powerup* p2)
 {
-	if (strcmp(p1->m_name, p2->m_name) < 0) {
-		return true;
-	}
-	else {
-		return false;
-	}
+	return strcmp(p1->m_name, p2->m_name) < 0;
 }
 
 void Powerup::draw()
@@ -52,4 +47,18 @@ void Powerup::lookAt()
 {
 	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR <<
 		"There is some treasure here. It looks small enough to pick up." << std::endl;
+}
+
+void Powerup::save(std::ofstream & out)
+{
+	if (!out.is_open())
+		return;
+
+	out << m_priority << ",";
+	out << m_mapPosition.x << ",";
+	out << m_mapPosition.y << ",";
+	out << m_name << ",";
+	out << m_healthMultiplier << ",";
+	out << m_attackMultiplier << ",";
+	out << m_defenseMultiplier << std::endl;
 }

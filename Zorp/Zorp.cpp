@@ -3,13 +3,6 @@
 
 #include "pch.h"
 #include <iostream>
-#include <Windows.h>
-#include <random>
-#include <time.h>
-#include "Point2D.h"
-#include "GameDefines.h"
-#include "Room.h"
-#include "Player.h"
 #include "Game.h"
 
 using namespace std;

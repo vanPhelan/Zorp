@@ -53,6 +53,10 @@ void Player::executeCommand(int command, Room* room)
 		//Pickup what's in the room
 		pickup(room);
 		break;
+	case SAVE:
+	case LOAD:
+		//Do nothing
+		break;
 	default:
 		//Whoops
 		std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
@@ -131,11 +135,15 @@ void Player::attack(Enemy* enemy)
 
 		//Check enemy status
 		if (!enemy->isAlive()) {
+			//Enemy dies
 			std::cout << "You fight a grue and kill it." << std::endl;
 		}
 		else {
+			//Enemy fights back
+			//Calculate damage
 			int damage = enemy->getAP() - m_defensePoints;
 			if (damage < 1) damage = 1;
+			//Subtract damage
 			m_hitPoints -= damage;
 
 			std::cout << "You fight a grue and take " << damage << " points of damage. "
@@ -148,50 +156,3 @@ void Player::attack(Enemy* enemy)
 		std::cout << "There is no one here to fight." << std::endl;
 	}
 }
-
-/*
-bool Player::pickup(Room* room)
-{
-	static const char itemNames[14][30] = {
-		"beige", "black", "blue", "brown", "burgundy",
-		"clear", "green", "grey", "pink", "plaid",
-		"purple", "red", "white", "yellow"
-	};
-
-	int item = rand() % 14;
-
-	char name[30];
-	strcpy_s(name, 30, itemNames[item]);
-
-	switch (room->getType()) {
-	case TREASURE_HP:
-		strncat_s(name, 30, " potion", 30);
-		break;
-	case TREASURE_AT:
-		strncat_s(name, 30, " sword", 30);
-		break;
-	case TREASURE_DF:
-		strncat_s(name, 30, " shield", 30);
-		break;
-	default:
-		return false;
-	}
-
-	//Add the treasure to the inventory
-	m_powerups.push_back(Powerup(name, 1, 1, 1.1f));
-	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR;
-	std::cout << "You pick up the " << name << "." << std::endl;
-
-	//Remove the treasure from the room
-	room->setType(EMPTY);
-
-	//Sort the inventory
-	std::sort(m_powerups.begin(), m_powerups.end(), Powerup::compare);
-
-	std::cout << INDENT << "Press 'Enter' to continue.";
-	std::cin.clear();
-	std::cin.ignore(std::cin.rdbuf()->in_avail());
-	std::cin.get();
-	return true;
-}
-*/

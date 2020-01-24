@@ -4,7 +4,6 @@
 
 class Room;
 class Enemy;
-//class Powerup;
 
 class Player : public Character
 {

@@ -10,10 +10,12 @@ Enemy::Enemy() : Character({ 0,0 }, 20, 10, 5)
 
 void Enemy::onAttacked(int attackPoints)
 {
+	//Calculate damage
 	int damage = attackPoints - m_defensePoints;
 	if (damage < 1) damage = 1;
+	//Subtract damage
 	m_hitPoints -= damage;
-
+	//Floor HP at 0
 	if (m_hitPoints < 0) m_hitPoints = 0;
 }
 

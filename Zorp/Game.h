@@ -31,6 +31,7 @@ private:
 	void drawValidDirections();
 
 	int getCommand();
+	void save();
 
 private:
 	bool m_gameOver;

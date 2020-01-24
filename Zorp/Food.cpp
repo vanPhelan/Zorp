@@ -29,3 +29,14 @@ void Food::lookAt()
 	std::cout << EXTRA_OUTPUT_POS << RESET_COLOR <<
 		"There is some food here. It should be edible." << std::endl;
 }
+
+void Food::save(std::ofstream& out)
+{
+	if (!out.is_open())
+		return;
+
+	out << m_priority << ",";
+	out << m_mapPosition.x << ",";
+	out << m_mapPosition.y << ",";
+	out << m_hitPoints << std::endl;
+}

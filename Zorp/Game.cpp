@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <random>
 #include <time.h>
+#include <fstream>
 
 Game::Game() : m_gameOver{ false }
 {
@@ -130,7 +131,7 @@ void Game::initializeEnemies()
 
 		//Set the enemy's position
 		m_enemies[i].setPosition({ x, y });
-		//Set the room's enemy
+		//Add the enemy to the room
 		m_map[y][x].addGameObject(&m_enemies[i]);
 	}
 }
@@ -146,7 +147,9 @@ void Game::initializeFood()
 		int x = rand() % (MAZE_WIDTH - 1);
 		int y = rand() % (MAZE_HEIGHT - 1);
 
-		//Set the room's food
+		//Set the food's position
+		m_food[i].setPosition({ x, y });
+		//Add the food to the room
 		m_map[y][x].addGameObject(&m_food[i]);
 	}
 }
@@ -182,9 +185,11 @@ void Game::initializePowerups()
 
 		//Add the second part of the item name
 		strncat_s(name, descriptors[rand() % 15], 30);
-		//Set the power's name
+		//Set the powerup's name
 		m_powerups[i].setName(name);
-		//Set the room's powerup
+		//Set the powerup's position
+		m_powerups[i].setPosition({ x, y });
+		//Add the powerup to the room
 		m_map[y][x].addGameObject(&m_powerups[i]);
 	}
 }
@@ -285,6 +290,11 @@ int Game::getCommand()
 				return PICKUP;
 		}
 
+		if (strcmp(input, "save") == 0) {
+			save();
+			return SAVE;
+		}
+
 		if (strcmp(input, "exit") == 0 || strcmp(input, "quit") == 0) {
 			return QUIT;
 		}
@@ -296,4 +306,47 @@ int Game::getCommand()
 	}
 
 	return 0;
+}
+
+void Game::save()
+{
+	std::ofstream out;
+
+	//Open the file for output, and truncate
+	out.open("zorpsave.txt", std::ofstream::out | std::ofstream::trunc);
+
+	if (out.is_open()) {
+		//You can't save when dead
+		if (m_gameOver) {
+			std::cout << EXTRA_OUTPUT_POS <<
+				"You have perished. You cannot save." << std::endl;
+		}
+		else {
+			//Save the powerups
+			out << m_powerupCount << std::endl;
+			for (int i = 0; i < m_powerupCount; i++) {
+				m_powerups[i].save(out);
+			}
+			//Save the enemies
+			out << m_enemyCount << std::endl;
+			for (int i = 0; i < m_enemyCount; i++) {
+				m_enemies[i].save(out);
+			}
+			//Save the food
+			out << m_foodCount << std::endl;
+			for (int i = 0; i < m_foodCount; i++) {
+				m_food[i].save(out);
+			}
+			//Save the player
+			m_player.save(out);
+		}
+	}
+	else {
+		//Could not open the file
+		std::cout << EXTRA_OUTPUT_POS << RED <<
+			"Could not open zorpsave.txt." << RESET_COLOR << std::endl;
+	}
+
+	out.flush();
+	out.close();
 }

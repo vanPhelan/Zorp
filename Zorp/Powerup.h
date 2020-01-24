@@ -23,6 +23,7 @@ public:
 	void draw();
 	void drawDescription();
 	void lookAt();
+	void save(std::ofstream& out);
 
 private:
 	char m_name[30];

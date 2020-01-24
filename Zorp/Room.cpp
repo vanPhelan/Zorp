@@ -61,6 +61,7 @@ void Room::removeGameObject(GameObject* object)
 		//If the object is found in the list...
 		if (*it == object) {
 			//...remove it
+			(*it)->setPosition({ -1,-1 });
 			m_objects.erase(it);
 			return;
 		}
