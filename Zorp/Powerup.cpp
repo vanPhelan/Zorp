@@ -54,13 +54,12 @@ void Powerup::save(std::ofstream & out)
 	if (!out.is_open())
 		return;
 
-	out << m_priority << ",";
-	out << m_mapPosition.x << ",";
-	out << m_mapPosition.y << ",";
-	out << m_name << ",";
-	out << m_healthMultiplier << ",";
-	out << m_attackMultiplier << ",";
-	out << m_defenseMultiplier << std::endl;
+	out.write((char*)&m_priority, sizeof(int));
+	out.write((char*)&m_mapPosition, sizeof(Point2D));
+	out.write(m_name, 30);
+	out.write((char*)&m_healthMultiplier, sizeof(int));
+	out.write((char*)&m_attackMultiplier, sizeof(int));
+	out.write((char*)&m_defenseMultiplier, sizeof(int));
 }
 
 bool Powerup::load(std::ifstream& in, const Game * game)
@@ -68,55 +67,29 @@ bool Powerup::load(std::ifstream& in, const Game * game)
 	if (!in.is_open())
 		return false;
 
-	char buffer[50] = { 0 };
-
 	//Load priority
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_priority = std::stoi(buffer);
+	in.read((char*)&m_priority, sizeof(int));
+	if (in.rdstate()) return false;
 
-	//Load map position x
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_mapPosition.x = std::stoi(buffer);
-
-	//Load map position y
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_mapPosition.y = std::stoi(buffer);
+	//Load map position
+	in.read((char*)&m_mapPosition, sizeof(Point2D));
+	if (in.rdstate()) return false;
 
 	//Load name
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	strcpy_s(m_name, buffer);
+	in.read(m_name, 30);
+	if (in.rdstate()) return false;
 
 	//Load health multiplier
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_healthMultiplier = std::stof(buffer);
+	in.read((char*)&m_healthMultiplier, sizeof(int));
+	if (in.rdstate()) return false;
 
 	//Load attack multiplier
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_attackMultiplier = std::stof(buffer);
+	in.read((char*)&m_attackMultiplier, sizeof(int));
+	if (in.rdstate()) return false;
 
 	//Load defense multiplier
-	in.ignore(1);
-	in.getline(buffer, 50);
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_defenseMultiplier = std::stof(buffer);
+	in.read((char*)&m_defenseMultiplier, sizeof(int));
+	if (in.rdstate()) return false;
 
 	return true;
 }

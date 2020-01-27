@@ -38,19 +38,19 @@ void Character::save(std::ofstream & out)
 	if (!out.is_open())
 		return;
 
-	out << m_priority << ",";
-	out << m_mapPosition.x << ",";
-	out << m_mapPosition.y << ",";
-	out << m_hitPoints << ",";
-	out << m_attackPoints << ",";
-	out << m_defensePoints << ",";
+	out.write((char*)&m_priority, sizeof(int));
+	out.write((char*)&m_mapPosition, sizeof(Point2D));
+	out.write((char*)&m_hitPoints, sizeof(int));
+	out.write((char*)&m_attackPoints, sizeof(int));
+	out.write((char*)&m_defensePoints, sizeof(int));
 
-	out << m_powerups.size() << std::endl;
+	int count = m_powerups.size();
+	out.write((char*)&count, sizeof(int));
 	for (int i = 0; i < m_powerups.size(); i++) {
 		//Save only the name of each powerup
 		//Each powerup will be save by the Game class
 		//The character only needs a pointer to each
-		out << m_powerups[i]->getName() << std::endl;
+		out.write(m_powerups[i]->getName(), 30);
 	}
 }
 
@@ -59,61 +59,36 @@ bool Character::load(std::ifstream& in, const Game* game)
 	if (!in.is_open())
 		return false;
 
-	char buffer[50] = { 0 };
-
 	//Load priority
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_priority = std::stoi(buffer);
+	in.read((char*)&m_priority, sizeof(int));
+	if (in.rdstate()) return false;
 
-	//Load map position x
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_mapPosition.x = std::stoi(buffer);
-
-	//Load map position y
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_mapPosition.y = std::stoi(buffer);
+	//Load map position
+	in.read((char*)&m_mapPosition, sizeof(Point2D));
+	if (in.rdstate()) return false;
 
 	//Load hit points
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_hitPoints = std::stoi(buffer);
+	in.read((char*)&m_hitPoints, sizeof(int));
+	if (in.rdstate()) return false;
 
 	//Load attack points
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_attackPoints = std::stoi(buffer);
+	in.read((char*)&m_attackPoints, sizeof(int));
+	if (in.rdstate()) return false;
 
 	//Load defense points
-	in.ignore(1);
-	in.get(buffer, 50, ',');
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	m_defensePoints = std::stoi(buffer);
+	in.read((char*)&m_defensePoints, sizeof(int));
+	if (in.rdstate()) return false;
 
 	//Load powerup count
-	in.ignore(1);
-	in.getline(buffer, 50);
-	if (in.rdstate() || buffer[0] == 0)
-		return false;
-	int powerupCount = std::stoi(buffer);
+	int powerupCount;
+	in.read((char*)&powerupCount, sizeof(int));
+	if (in.rdstate()) return false;
 
+	char name[30] = { 0 };
 	for (int i = 0; i < powerupCount; i++) {
-		char name[30] = { 0 };
-		in.getline(name, 30);
-		if (in.rdstate() || name[0] == 0)
-			return false;
+		name[0] = 0;
+		in.read(name, 30);
+		if (in.rdstate()) return false;
 
 		//Search for the powerup by name
 		Powerup* powerup = game->findPowerup(name, true);

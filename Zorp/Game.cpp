@@ -317,7 +317,10 @@ int Game::getCommand()
 		}
 
 		if (strcmp(input, "load") == 0) {
-			load();
+			if (!load()) {
+				std::cout << EXTRA_OUTPUT_POS << RED <<
+					"Could not load zorpsave.dat." << std::endl;
+			}
 			return LOAD;
 		}
 
@@ -338,28 +341,29 @@ void Game::save()
 {
 	std::ofstream out;
 
-	//Open the file for output, and truncate
-	out.open("zorpsave.txt", std::ofstream::out | std::ofstream::trunc);
+	//Open the file for output in binary mode, and truncate
+	out.open("zorpsave.dat",
+		std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 
 	if (out.is_open()) {
 		//You can't save when dead
 		if (m_gameOver) {
 			std::cout << EXTRA_OUTPUT_POS <<
-				"You have perished. You cannot save." << std::endl;
+				"You cannot save while dead." << std::endl;
 		}
 		else {
 			//Save the powerups
-			out << m_powerupCount << std::endl;
+			out.write((char*)&m_powerupCount, sizeof(int));
 			for (int i = 0; i < m_powerupCount; i++) {
 				m_powerups[i].save(out);
 			}
 			//Save the enemies
-			out << m_enemyCount << std::endl;
+			out.write((char*)&m_enemyCount, sizeof(int));
 			for (int i = 0; i < m_enemyCount; i++) {
 				m_enemies[i].save(out);
 			}
 			//Save the food
-			out << m_foodCount << std::endl;
+			out.write((char*)&m_foodCount, sizeof(int));
 			for (int i = 0; i < m_foodCount; i++) {
 				m_food[i].save(out);
 			}
@@ -370,7 +374,7 @@ void Game::save()
 	else {
 		//Could not open the file
 		std::cout << EXTRA_OUTPUT_POS << RED <<
-			"Could not open zorpsave.txt." << RESET_COLOR << std::endl;
+			"Could not open zorpsave.dat." << RESET_COLOR << std::endl;
 	}
 
 	out.flush();
@@ -382,22 +386,18 @@ bool Game::load()
 	std::ifstream in;
 
 	//Open the file for input
-	in.open("zorpsave.txt", std::ifstream::in);
+	in.open("zorpsave.dat", std::ifstream::in | std::ifstream::binary);
 
 	if (!in.is_open()) {
 		return false;
 	}
-
-	char buffer[50] = { 0 };
 
 	//Clear the temporary list
 	if (m_tempPowerups != nullptr)
 		delete[] m_tempPowerups;
 
 	//Load the powerups
-	in.getline(buffer, 50);
-	//Read the amount of powerups
-	m_tempPowerupCount = std::stoi(buffer);
+	in.read((char*)&m_tempPowerupCount, sizeof(int));
 	if (in.rdstate() || m_tempPowerupCount < 0)
 		return false;
 	//Read the powerups
@@ -411,9 +411,8 @@ bool Game::load()
 	}
 
 	//Load the enemies
-	in.getline(buffer, 50);
-	//Read the amount of enemies
-	int enemyCount = std::stoi(buffer);
+	int enemyCount;
+	in.read((char*)&enemyCount, sizeof(int));
 	if (in.rdstate() || enemyCount < 0)
 		return false;
 	//Read the enemies
@@ -428,9 +427,8 @@ bool Game::load()
 	}
 
 	//Load the food
-	in.getline(buffer, 50);
-	//Read the amount of food
-	int foodCount = std::stoi(buffer);
+	int foodCount;
+	in.read((char*)&foodCount, sizeof(int));
 	if (in.rdstate() || foodCount < 0)
 		return false;
 	//Read the food
